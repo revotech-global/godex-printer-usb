@@ -70,8 +70,8 @@ export default class Label{
    }
 
    // Text command
-   addText(text, xStart, yStart, size){
-      this.addLabelElement(new Text(text, xStart, yStart, size));
+   addText(text, xStart, yStart, size, rotation, font){
+      this.addLabelElement(new Text(text, xStart, yStart, size, rotation, font));
    }
 
    addBarcode(type, x, y, narrow, width, height, data){

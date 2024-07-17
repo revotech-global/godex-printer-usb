@@ -4,7 +4,7 @@ printer.js
 ==========
 A module to control GoDex printer.
 */
-import {SerialPort} from 'serialport';
+//import {SerialPort} from 'serialport';
 import EventEmitter from 'events';
 import Label from './label';
 import Promise from 'bluebird';
@@ -15,30 +15,29 @@ import Promise from 'bluebird';
  */
 export default class Printer extends EventEmitter{
 
-   constructor({port= null,
-               baud = 9600,
+   constructor({
+               connector = null,
                dpi=203,
                speed= 4,
                darkness= 6,
+               transferType = 'Direct',
                rotate= 150} = {}){
       super();
 
-      // Serial port name
-      this.port = port;
-
-      // Serial port baud rate
-      this.baud = baud;
-
+      this.connector = connector;
       // Printer specific dot per inch
       this.dpi = dpi;
 
-      this.config = {speed, darkness, rotate};
+      this.config = {speed, darkness, rotate, transferType};
 
       this.cmd = {
          speed : ()=>{return `^S${this.config.speed}\n`;},
          darkness: ()=>{return `^H${this.config.darkness}\n`;},
          rotate: ()=>{return `~R${this.config.rotate}\n`;},
-         end: ()=>{return 'E\n';}
+         end: ()=>{return 'E\n';},
+         setTransferType: ()=>{return this.transferType == 'Direct' ? '^AD\n' : '^AD\n';},
+         cancel: ()=>{return '~S,CANCEL\n';},
+         clearBuffer: ()=>{return '~S,BUFCLR\n';}
       };
 
       this.set = {
@@ -57,8 +56,8 @@ export default class Printer extends EventEmitter{
       this.sp = null;
 
       // Try to connect to port
-      if(this.port){
-         this.start()
+      if(this.connector){
+         this.connector.start()
          .then(function(){
             this.nextPrintTask();
          }.bind(this))
@@ -68,74 +67,20 @@ export default class Printer extends EventEmitter{
       }
    }
 
-   // Set serial port
-   setPort(port){
-      this.port = port;
-   }
-
-   // Start serial port
-   start(port){
-      return new Promise(function(resolve, reject){
-         this.port = port? port : this.port;
-         if((this.sp === null || !this.sp.isOpen) && this.port){
-            this.sp = new SerialPort({path: this.port, baudRate: this.baud}, function(err){
-               if(err)
-                  reject(err);
-               else
-                  resolve();
-            }.bind(this));
-         }
-         else{
-            reject("Cannot open port");
-         }
-      }.bind(this));
-   }
-
-   // Stop serial port
    stop(){
-      if(this.sp && this.sp.isOpen)
-         this.sp.close();
+      this.connector.stop();
    }
 
-   // Get list of serial ports
-   getPorts(callback, raw){
-      SerialPort.list(function (err, ports) {
-         if(err){
-            if(callback)
-               callback(err, null);
-         }
-         else{
-            if(!raw){
-               var portNames = [];
-               if(ports.length > 0)
-                  ports.forEach(function(port){ portNames.push(port.comName); });
-               callback(null, portNames);
-            }
-            else {
-               callback(null, ports);
-            }
-         }
-      });
-   }
-
-   // Get list of serial ports synchronously
-   async getPortsSync(raw){
-      var ports = await SerialPort.list();
-      console.log(ports);
-      if(!raw){
-         var portNames = [];
-         if(ports.length > 0)
-            ports.forEach((port) => { portNames.push(port.path); });
-         return portNames;
-      }
-      else{
-         return ports;
-      }
-   }
 
    // DEPRECATED - Push a print task to queue
    addPrintTask(task){
       console.error("DEPRECATED: Printer.addPrintTask() depricated, use Printer.PrintLabel(Label) instead.");
+   }
+
+   clearIssues(){
+      let cmd = this.cmd.clearBuffer() + this.cmd.cancel();
+      this.queue.push(cmd);
+      this.nextPrintTask();
    }
 
    // Push a print task to queue
@@ -175,15 +120,17 @@ export default class Printer extends EventEmitter{
 
    // Get printer status
    getPrinterStatus(callback, flag){
-      if(this.sp && this.sp.isOpen){
-         // On serial data received
-         this.sp.once('data', function(data){
+      if(this.connector.isOpen()){
+         // On  data received
+         this.connector.once('data', function(data){
+            data = data?.toString('UTF-8')?.trimEnd();
             var d = data.replace('\r', '');
             if(callback)
                callback(null, this.status[d]);
          }.bind(this));
-         // Write to serial
-         this.sp.write("^XSET,IMMEDIATE,1\n~S,CHECK\n", function(err, results){
+         // Write
+         this.connector.write("^XSET,IMMEDIATE,1\n~S,CHECK\n", function(err, results){
+            console.log("Write immediate result",results);
          });
       }
       else{
@@ -194,8 +141,8 @@ export default class Printer extends EventEmitter{
 
    // Print next task in queue
    nextPrintTask(){
-      // If serial port is open
-      if(this.sp && this.sp.isOpen){
+      // If  port is open
+      if(this.connector.isOpen()){
          // If not printing and task leftover in queue
          if(!this.isPrinting && this.queue.length > 0){
             var task = this.queue.splice(0,1)[0];
@@ -209,18 +156,16 @@ export default class Printer extends EventEmitter{
 
    // Print
    print(command, callback){
-      // If serial port is open
-      if(this.sp.isOpen){
+      // If connector port is open
+      if(this.connector.isOpen()){
          // If currently not printing
          if(!this.isPrinting){
             this.isPrinting = true;
-            this.sp.write(command, function(){
-               this.sp.drain(function(){
-                  this.isPrinting = false;
-                  this.nextPrintTask();
-                  if(callback)
-                     callback(null);
-               }.bind(this));
+            this.connector.write(command, function(){
+               this.isPrinting = false;
+               this.nextPrintTask();
+               if(callback)
+                  callback(null);
             }.bind(this));
          }
       }
@@ -231,9 +176,11 @@ export default class Printer extends EventEmitter{
    }
 
    getPrintCommandPrefix(mode=0){
-      var prefix =  this.cmd.speed() +
-                     this.cmd.darkness() +
-                     this.cmd.rotate();
+      var prefix =
+          this.cmd.setTransferType() +
+          this.cmd.speed() +
+          this.cmd.darkness() +
+          this.cmd.rotate();
       return prefix;
    }
 }

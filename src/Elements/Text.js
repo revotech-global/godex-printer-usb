@@ -10,13 +10,15 @@ import Element from './Element';
 
 export default class Text extends Element{
 
-   constructor(text, xStart, yStart, size){
+   constructor(text, xStart, yStart, size, rotation, font){
       super();
       this.text = text;
       this.xStart = xStart;
       this.yStart = yStart;
       this.size = size;
       this.mmToPoint = 3.5; // 1mm = 2.84 points
+      this.rotation = rotation || 0;
+      this.font = font?"D"+font : "";
    }
 
    getPrintCommand(dpi=203){
@@ -33,7 +35,7 @@ export default class Text extends Element{
          // Get closest matching size
          var k = _.map(i, function(num){ return Math.abs(num - sizePoint); });
          var l = _.lastIndexOf(k, _.min(k));
-         cmd = `A${j[l]},${xStartDot},${yStartDot},1,1,1,0,${this.text}\n`;
+         cmd = `A${j[l]},${xStartDot},${yStartDot},1,1,1,${this.rotation}${this.font},${this.text}\n`;
       }
       else{
          var sizeDot = this.toDot(this.size);
