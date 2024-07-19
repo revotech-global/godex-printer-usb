@@ -4,12 +4,15 @@ import chai from 'chai';
 import sinon from 'sinon';
 import moment from 'moment';
 import Printer from './../src/printer';
+import NetworkPort from './../src/network-port';
 import Label from './../src/label';
 import Svg from './../src/svglabel';
 import {Text, Rectangle, LineHor, LineVer, Barcode} from './../src/elements';
 
 var expect = chai.expect;
-var printer = new Printer();
+var nport = new NetworkPort();
+nport.setURL("http://localhost/");
+var printer = new Printer({connector: nport});
 var label = new Label();
 var svg = new Svg(__dirname+'/../example/L01.svg', {'PartNo':9019921, 'uom': 'PCS', 'Qty': 19, 'Bin':'LX000'});
 

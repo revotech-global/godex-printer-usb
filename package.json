@@ -1,7 +1,7 @@
 {
-  "name": "godex-printer",
+  "name": "godex-printer-usb",
   "version": "1.2.0",
-  "description": "Node module for sending commands to GoDex label printers.",
+  "description": "Node module for sending commands to GoDex label printers via USB, Serial and network.",
   "main": "lib/index.js",
   "scripts": {
     "test": "mocha",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/prashanta/godex-printer.git"
+    "url": "https://github.com/revotech-global/godex-printer-usb.git"
   },
   "keywords": [
     "GoDex",
@@ -23,7 +23,7 @@
     "label",
     "svg"
   ],
-  "author": "Prashanta Shrestha <pmshrestha@gmail.com>",
+  "author": "Revotech <contact@revotech>",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.7.2",
