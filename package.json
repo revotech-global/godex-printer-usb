@@ -7,6 +7,7 @@
     "test": "mocha",
     "example": "node_modules/.bin/babel-node example/basic-example.js ",
     "example-usb": "node_modules/.bin/babel-node example/usb-example.js ",
+    "example-network": "node_modules/.bin/babel-node example/network-example.js ",
     "example_svg": "node_modules/.bin/babel-node example/svg-example.js ",
     "prebuild": "rimraf lib",
     "build": "node_modules/.bin/babel src -d lib "
@@ -25,6 +26,7 @@
   "author": "Prashanta Shrestha <pmshrestha@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.7.2",
     "bluebird": "^3.7.2",
     "core-js": "^3.26.1",
     "moment": "^2.29.4",

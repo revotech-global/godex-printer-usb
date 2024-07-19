@@ -129,7 +129,7 @@ export default class Printer extends EventEmitter{
                callback(null, this.status[d]);
          }.bind(this));
          // Write
-         this.connector.write("^XSET,IMMEDIATE,1\n~S,CHECK\n", function(err, results){
+         this.connector.write("^XSET,IMMEDIATE,1\n~S,CHECK\n^XSET,IMMEDIATE,0\n", function(err, results){
             console.log("Write immediate result",results);
          });
       }

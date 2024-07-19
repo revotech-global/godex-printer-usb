@@ -1,13 +1,14 @@
-# godex-printer
+# godex-printer-usb
 
-Sends EZPL print commands to GoDex label printer via serial port. Uses SVG as template for labels. For more information on GoDex's EZPL go [here](http://www.godexintl.com/EN/download/downloads/list/Manuals).
+Sends EZPL print commands to GoDex label printer via usb serial port. Uses SVG as template for labels. For more information on GoDex's EZPL go [here](http://www.godexintl.com/EN/download/downloads/list/Manuals).\
+Based on the work of [prashanta's godex-printer](https://github.com/prashanta/godex-printer)
 
 ---
 
 #### __Installation__
 
 ```bash
-npm install godex-printer
+npm install godex-printer-usb (soon)
 ```
 
 ---
@@ -16,9 +17,17 @@ npm install godex-printer
 
 ```javascript
 // Import necessary modules
-import {Printer, Label} from 'godex-printer';
+import {Printer, Label, UsbPort, SerialPort} from 'godex-printer';
 
-var printer = new Printer({port:'COM4'}); // Create a new printer
+let usb = new UsbPort(); //Create a new USB connector
+usb.setPortById(6495, 1);
+
+const printer = new Printer({connector:usb}); // Create a new printer based on the connector
+
+// For Serial Port
+// let serial = new SerialPort()
+// serial.setPort('COM4', 9600);
+//const printer = new Printer({connector:serial});
 
 // All units are in mm
 var label1 = new Label({width: 80, height: 52}); // Create a new label.
@@ -30,8 +39,8 @@ label1.addText("LREM2019", 1, 4, 10);
 label1.addBarcode('CODE39', 2, 14, 0.2, 0.75, 8, "7dds18891");
 label1.addText("QTY (PCS)", 2, 25, 2);
 label1.addText("19", 2, 28, 6);
-label1.addText("BIN", 36, 25, 2);
-label1.addText("Tray", 36, 28, 6);
+label1.addText("ΑΒΓ", 36, 25, 2, 0, 'UTF8');
+label1.addText("Tray", 36, 28, 6, "0I"); //Inverted font
 
 // Deprecated -> printer.addPrintTask(label1.getPrintCommand());
 printer.printLabel(label1);
@@ -49,18 +58,19 @@ ___Note:___ All units are in dots (dot as in dpi. For 203 dpi printer 1mm = 8 do
 #### __Label template in SVG__
 
 ```javascript
-import {Printer, SvgLabel} from 'godex-printer';
+import {Printer, SvgLabel, UsbPort} from 'godex-printer';
 
-var printer = new Printer();
-printer.start('COM4')
-.then(function(){
-   var svgLabel = new SvgLabel(__dirname+'/L01.svg', {'PartNo':7188, 'uom': 'pcs', 'Qty': 122, 'Bin': 'BXR109'});
-   // Deprecated -> printer.addPrintTask(svgLabel.getPrintCommand());
-   printer.printLabel(svgLabel);
-   printer.on("printQueueEmpty", function(){
-      console.log("Everything printed");
-      printer.stop();
-   });
+let usb = new UsbPort(); //Create a new USB connector
+usb.setPortById(6495, 1);
+
+const printer = new Printer({connector:usb}); // Create a new printer based on the connector
+
+var svgLabel = new SvgLabel(__dirname+'/L01.svg', {'PartNo':7188, 'uom': 'pcs', 'Qty': 122, 'Bin': 'BXR109'});
+// Deprecated -> printer.addPrintTask(svgLabel.getPrintCommand());
+printer.printLabel(svgLabel);
+printer.on("printQueueEmpty", function(){
+  console.log("Everything printed");
+  printer.stop();
 });
 ```
 

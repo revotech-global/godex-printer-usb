@@ -7,8 +7,9 @@ export default class SerialPort {
    }
 
    // Set serial port
-   setPort(port){
+   setPort(port, baud = 9600){
       this.port = port;
+
    }
 
    // Start serial port
