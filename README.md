@@ -17,12 +17,17 @@ npm install godex-printer-usb (soon)
 
 ```javascript
 // Import necessary modules
-import {Printer, Label, UsbPort, SerialPort} from 'godex-printer';
+import {Printer, Label, UsbPort, SerialPort, NetworkPort} from 'godex-printer';
 
 let usb = new UsbPort(); //Create a new USB connector
 usb.setPortById(6495, 1);
 
 const printer = new Printer({connector:usb}); // Create a new printer based on the connector
+
+// For Network
+// let netport = new NetworkPort()
+// netport.setURL("http://192.168.1.206/");
+//const printer = new Printer({connector:netport});
 
 // For Serial Port
 // let serial = new SerialPort()

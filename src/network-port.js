@@ -7,6 +7,7 @@ import EventEmitter from 'events';
 export default class NetworkPort {
     constructor(){
 //      this.device = null;
+      this.URL = null;
       this.iphost = null;
       this.port = 80;
       this.protocol = 'http';
@@ -21,7 +22,15 @@ export default class NetworkPort {
         this.protocol = urlParts.protocol;
         this.iphost = urlParts.hostname;
         this.port = urlParts.port || this.protocol === 'https:' ? 443 : 80;
+        this._prepareURL();
+   }
 
+   setHostIp(iphost){
+        this.iphost = iphost;
+        this._prepareURL();
+   }
+
+   _prepareURL(){
         let URL = new url.URL("http://localhost");
         URL.protocol = this.protocol;
         URL.hostname = this.iphost;
@@ -37,7 +46,7 @@ export default class NetworkPort {
    // Start serial port
    start(){
       return new Promise(async function(resolve, reject){
-         if(this.iphost ){
+         if(this.URL ){
             try {
                 await this._login();
             } catch (e){
