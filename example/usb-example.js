@@ -33,8 +33,14 @@ p.getPrinterStatus((result)=> {
     label2.addText("641", 37, 3, 4);
     label2.addLineHor(2, 54, 9, 0.1);
 
+     var label3 = new Label(1, 55, 25, 4, 0);
+     label2.addText("Α2ΚΜ4", 0, 0, 4, 90);
+     label3.addQrCode("ALPHA","MICRO", 5, 5, "M", 5,8,0,"HELLO");
+
+
     p.printLabel(label1);
     p.printLabel(label2);
+     p.printLabel(label3);
 
     p.on("printQueueEmpty", function () {
       console.log("Everything printed");

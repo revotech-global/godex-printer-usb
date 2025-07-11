@@ -11,6 +11,7 @@ import LineHor from './elements/LineHor';
 import LineVer from './elements/LineVer';
 import Text from './elements/Text';
 import Barcode from './elements/Barcode';
+import QrCode from "./elements/QrCode";
 
 export default class Label{
    constructor(copies = 1, width = 80, height = 52, gap = 2, leftMargin= 26, rowOffset= -15, startPos= 20){
@@ -76,6 +77,10 @@ export default class Label{
 
    addBarcode(type, x, y, narrow, width, height, data){
       this.addLabelElement(new Barcode(type, x, y, narrow, width, height, 0, 0, data));
+   }
+
+   addQrCode(mode, type, x, y, errorCorrection, multiple, mask, rotation, data){
+      this.addLabelElement(new QrCode(mode, type, x, y, errorCorrection, multiple, mask, rotation, data));
    }
 
    getPrintCommand(dpi=203, mode = 0){
