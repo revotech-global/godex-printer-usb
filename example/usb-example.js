@@ -34,13 +34,24 @@ p.getPrinterStatus((result)=> {
     label2.addLineHor(2, 54, 9, 0.1);
 
      var label3 = new Label(1, 55, 25, 4, 0);
-     label2.addText("Α2ΚΜ4", 0, 0, 4, 90);
-     label3.addQrCode("ALPHA","MICRO", 5, 5, "M", 5,8,0,"HELLO");
+     label3.addText("A2KM4Q", 5, 6, 2, 1, 'E');
+    label3.addBarcode('CODE93', 10, 0, 0.2, 0.4, 5, "A2KM4Q",1);
+    label3.addText("A2KM4Q", 50, 16, 2, 3, 'E');
+    label3.addBarcode('CODE93', 50, 0, 0.2, 0.4, 5, "A2KM4Q",1);
+
+     var label4 = new Label(1, 55, 25, 4, 0);
+     label4.addText("A2KM4Q", 5, 6, 2, 1, 'E');
+    label4.addQrCode("ALPHA","MICRO", 5, 7, "M", 3,8,0,"A2KM4Q");
+    label4.addText("A2KM4Q", 50, 16, 2, 3, 'E');
+    label4.addQrCode("ALPHA","MICRO", 42, 7, "M", 3,8,0,"A2KM4Q");
+
+
 
 
     p.printLabel(label1);
     p.printLabel(label2);
      p.printLabel(label3);
+     p.printLabel(label4);
 
     p.on("printQueueEmpty", function () {
       console.log("Everything printed");

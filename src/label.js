@@ -75,8 +75,8 @@ export default class Label{
       this.addLabelElement(new Text(text, xStart, yStart, size, rotation, font));
    }
 
-   addBarcode(type, x, y, narrow, width, height, data){
-      this.addLabelElement(new Barcode(type, x, y, narrow, width, height, 0, 0, data));
+   addBarcode(type, x, y, narrow, width, height, data, rotation = 0 ){
+      this.addLabelElement(new Barcode(type, x, y, narrow, width, height, rotation, 0, data));
    }
 
    addQrCode(mode, type, x, y, errorCorrection, multiple, mask, rotation, data){
