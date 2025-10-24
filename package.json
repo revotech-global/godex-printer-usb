@@ -11,7 +11,7 @@
     "example_svg": "node_modules/.bin/babel-node example/svg-example.js ",
      "prepare": "npm run build",
     "prebuild": "rimraf lib",
-    "build": "node_modules/.bin/babel src -d lib "
+    "build": "npx babel src -d lib "
   },
   "repository": {
     "type": "git",
