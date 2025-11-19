@@ -87,6 +87,7 @@ export default class NetworkPort {
            "userPassword":this.password,
            "loginButton": "Login"
        })).toString();
+       console.log("DataToSend", DataToSend);
       let response = await axios.request({
            method: 'post',
            url: `${this.URL}login.cgi`,
@@ -95,17 +96,39 @@ export default class NetworkPort {
            },
            data : DataToSend
        });
-      console.log(response);
+
     }
 
-    write(command, onDoneCallback){
+    splitCommandToSize(command, size){
+        const commandParts = command.split("\r\n");
+        const splitParts = [];
+        let currentPart = "";
+        while (commandParts.length) {
+            if ((currentPart+commandParts[0]+"\r\n").length <= size){
+                currentPart += commandParts[0] + "\r\n";
+                commandParts.shift();
+            } else {
+                if (commandParts[0].length>size){
+                    throw (new Error("Single command part exceeds size limit"));
+                }
+                splitParts.push(currentPart);
+                currentPart = "";
+            }
+        }
+        if (currentPart.length){
+            splitParts.push(currentPart);
+        }
+        return splitParts;
+    }
+    write5(command, onDoneCallback){
         return new Promise(async (resolve, reject)=>{
             if (!this.isOpen()) {
                 throw new Error('Port not open');
             }
+            const properCommand = command.replaceAll('\n','\r\n');
 
             const DataToSend = (new url.URLSearchParams({
-                "printCmd":command.replaceAll('\n','\r\n'),
+                "printCmd":properCommand,
                 "outputMsg":"",
                 "hiddenButton": 1
             })).toString();
@@ -124,11 +147,79 @@ export default class NetworkPort {
             const regex = /<input[\s\S]*?type="hidden"[\s\S]*?name="hiddenButton"[\s\S]*?value="([\s\S]*?)"[\s\S]*?>/i;
             const match = response?.data?.match(regex);
             if (match && match[1]) {
+                console.log("A",match[1])
                 this.EM.emit('data', match[1]);
                 onDoneCallback(match[1]);
             } else {
+                console.log("B");
                 onDoneCallback("");
                 this.EM.emit('data', "");
+            }
+        });
+    }
+
+    write(command, onDoneCallback){
+        return new Promise(async (resolve, reject)=>{
+            if (!this.isOpen()) {
+                throw new Error('Port not open');
+            }
+            const commandToSend = command.replaceAll('\r\n','\n').replaceAll('\n','\r\n');
+            const DataToSend = (new url.URLSearchParams({
+                "printCmd":commandToSend,
+                "outputMsg":"",
+                "hiddenButton": 1
+            })).toString();
+
+            let parts = [];
+            console.log("Doing command", commandToSend.length, commandToSend);
+            if (command.length<=230){
+                parts.push(commandToSend);
+            } else {
+                parts = this.splitCommandToSize(commandToSend, 230);
+            }
+
+            let allResult = "";
+            console.log("splitCommandToSize", parts.length,commandToSend.length)
+            for (let i=0; i<parts.length; i++){
+                let result = await this.writePart(parts[i]);
+                allResult += result;
+            }
+            console.log("command data", allResult);
+            this.EM.emit('data', allResult);
+            onDoneCallback(allResult);
+
+        });
+    }
+
+    writePart(command){
+        return new Promise(async (resolve, reject)=>{
+            if (!this.isOpen()) {
+                throw new Error('Port not open');
+            }
+            const DataToSend = (new url.URLSearchParams({
+                "printCmd": command,
+                 "outputMsg":"",
+                "hiddenButton": 1
+        })).toString();
+
+            let response = await axios.request({
+                method: 'post',
+                url: `${this.URL}printercontrol.cgi`,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                data : DataToSend
+            });
+            if (response?.data?.includes("You need to relogin after server is reboot ready")) {
+                await this._login();
+                return this.writePart(command);
+            }
+            const regex = /<input[\s\S]*?type="hidden"[\s\S]*?name="hiddenButton"[\s\S]*?value="([\s\S]*?)"[\s\S]*?>/i;
+            const match = response?.data?.match(regex);
+            if (match && match[1]) {
+                resolve(match[1]);
+            } else {
+                resolve("");
             }
         });
     }
