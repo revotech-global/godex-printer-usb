@@ -128,6 +128,7 @@ export default class Printer extends EventEmitter{
             if(callback)
                callback(null, this.status[d]);
          }.bind(this));
+         this.connector.once('error', o => this.emit('error', o)).bind(this);
          // Write
          this.connector.write("^XSET,IMMEDIATE,1\n~S,CHECK\n^XSET,IMMEDIATE,0\n", function(err, results){
             console.log("Write immediate result",results);
@@ -161,6 +162,7 @@ export default class Printer extends EventEmitter{
          // If currently not printing
          if(!this.isPrinting){
             this.isPrinting = true;
+            this.connector.once('error', o => this.emit('error', o)).bind(this);
             this.connector.write(command, function(){
                this.isPrinting = false;
                this.nextPrintTask();
