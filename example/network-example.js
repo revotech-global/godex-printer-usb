@@ -5,7 +5,7 @@ import LineHor from '../src/elements/LineHor';
 import Promise from 'bluebird';
 
 let netport = new NetworkPort();
-netport.setURL("http://192.168.1.206/");
+netport.setURL("http://192.168.1.140/");
 var p = new Printer({connector: netport});
 
 
@@ -35,6 +35,7 @@ p.getPrinterStatus((result)=> {
 
     p.printLabel(label1);
     p.printLabel(label2);
+
 
     p.on("printQueueEmpty", function () {
       console.log("Everything printed");
