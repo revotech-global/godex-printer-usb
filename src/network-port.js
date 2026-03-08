@@ -93,16 +93,20 @@ export default class NetworkPort {
            "loginButton": "Login"
        })).toString();
        console.log("DataToSend", DataToSend);
-      let response = await axios.request({
-           method: 'post',
-           url: `${this.URL}login.cgi`,
-           headers: {
-               'Content-Type': 'application/x-www-form-urlencoded',
-           },
-           timeout: this.timeout,
-           data : DataToSend
-       });
-
+       try {
+           let response = await axios.request({
+               method: 'post',
+               url: `${this.URL}login.cgi`,
+               headers: {
+                   'Content-Type': 'application/x-www-form-urlencoded',
+               },
+               timeout: this.timeout,
+               data: DataToSend
+           });
+       } catch(err){
+              this.EM.emit('error', err);
+            throw err;
+       }
     }
 
     splitCommandToSize(command, size){
@@ -146,7 +150,7 @@ export default class NetworkPort {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 timeout: this.timeout,
-                data : DataToSend
+                data : DataToSend,
             });
             if (response?.data?.includes("You need to relogin after server is reboot ready")) {
                 await this._login();
@@ -208,25 +212,30 @@ export default class NetworkPort {
                  "outputMsg":"",
                 "hiddenButton": 1
         })).toString();
-
-            let response = await axios.request({
-                method: 'post',
-                url: `${this.URL}printercontrol.cgi`,
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                data : DataToSend
-            });
-            if (response?.data?.includes("You need to relogin after server is reboot ready")) {
-                await this._login();
-                return this.writePart(command);
-            }
-            const regex = /<input[\s\S]*?type="hidden"[\s\S]*?name="hiddenButton"[\s\S]*?value="([\s\S]*?)"[\s\S]*?>/i;
-            const match = response?.data?.match(regex);
-            if (match && match[1]) {
-                resolve(match[1]);
-            } else {
-                resolve("");
+            try {
+                let response = await axios.request({
+                    method: 'post',
+                    url: `${this.URL}printercontrol.cgi`,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    timeout: this.timeout,
+                    data: DataToSend
+                });
+                if (response?.data?.includes("You need to relogin after server is reboot ready")) {
+                    await this._login();
+                    return this.writePart(command);
+                }
+                const regex = /<input[\s\S]*?type="hidden"[\s\S]*?name="hiddenButton"[\s\S]*?value="([\s\S]*?)"[\s\S]*?>/i;
+                const match = response?.data?.match(regex);
+                if (match && match[1]) {
+                    resolve(match[1]);
+                } else {
+                    resolve("");
+                }
+            } catch (e){
+                this.EM.emit('error', e)
+                reject(e);
             }
         });
     }
