@@ -14,6 +14,7 @@ export default class NetworkPort {
       this.EM = new EventEmitter();
       this.username = 'admin';
       this.password = '1111';
+      this.timeout = 3000;
    }
 
    // Set serial port
@@ -41,6 +42,10 @@ export default class NetworkPort {
     setAuth(username, password){
         this.username = username;
         this.password = password;
+    }
+
+    setTimeout(timeout){
+        this.timeout = timeout;
     }
 
    // Start serial port
@@ -93,6 +98,7 @@ export default class NetworkPort {
            headers: {
                'Content-Type': 'application/x-www-form-urlencoded',
            },
+           timeout: this.timeout,
            data : DataToSend
        });
       console.log(response);
@@ -116,6 +122,7 @@ export default class NetworkPort {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
+                timeout: this.timeout,
                 data : DataToSend
             });
             if (response?.data?.includes("You need to relogin after server is reboot ready")) {
