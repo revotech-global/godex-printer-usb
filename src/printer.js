@@ -162,7 +162,6 @@ export default class Printer extends EventEmitter{
          // If currently not printing
          if(!this.isPrinting){
             this.isPrinting = true;
-            this.connector.once('error', o => this.emit('error', o)).bind(this);
             this.connector.write(command, function(){
                this.isPrinting = false;
                this.nextPrintTask();
