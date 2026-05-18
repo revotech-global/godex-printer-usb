@@ -1,6 +1,6 @@
 {
   "name": "godex-printer-usb",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Node module for sending commands to GoDex label printers via USB, Serial and network.",
   "main": "lib/index.js",
   "scripts": {
