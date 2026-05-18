@@ -5,9 +5,11 @@ import R from './Rectangle';
 import LH from './LineHor';
 import LV from './LineVer';
 import B from './Barcode';
+import RC from './RawCommand';
 
 export const Text = T;
 export const Rectangle = R;
 export const  LineHor = LH;
 export const  LineVer = LV;
 export const  Barcode = B;
+export const  RawCommand = RC;

@@ -12,6 +12,7 @@ import LineVer from './elements/LineVer';
 import Text from './elements/Text';
 import Barcode from './elements/Barcode';
 import QrCode from "./elements/QrCode";
+import RawCommand from './elements/RawCommand';
 
 export default class Label{
    constructor(copies = 1, width = 80, height = 52, gap = 2, leftMargin= 26, rowOffset= -15, startPos= 20){
@@ -70,9 +71,11 @@ export default class Label{
       this.addLabelElement(new Rect(xStart, yStart, width, height, t));
    }
 
-   // Text command
-   addText(text, xStart, yStart, size, rotation, font){
-      this.addLabelElement(new Text(text, xStart, yStart, size, rotation, font));
+   // Text command. Passing `inverse: true` appends the EZPL `I` flag to the
+   // text command's 7th field (e.g. `0DEI`) so the printer renders the glyphs
+   // in reverse-video — white on whatever is drawn underneath.
+   addText(text, xStart, yStart, size, rotation, font, inverse){
+      this.addLabelElement(new Text(text, xStart, yStart, size, rotation, font, inverse));
    }
 
    addBarcode(type, x, y, narrow, width, height, data, rotation = 0 ){
@@ -81,6 +84,12 @@ export default class Label{
 
    addQrCode(mode, type, x, y, errorCorrection, multiple, mask, rotation, data){
       this.addLabelElement(new QrCode(mode, type, x, y, errorCorrection, multiple, mask, rotation, data));
+   }
+
+   // Injects an arbitrary EZPL command into the stream between drawn elements.
+   // Useful for mode switches like `^LI` (inverse) / `^L` (normal) mid-label.
+   addRawCommand(command){
+      this.addLabelElement(new RawCommand(command));
    }
 
    getPrintCommand(dpi=203, mode = 0){
