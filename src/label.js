@@ -15,7 +15,7 @@ import QrCode from "./elements/QrCode";
 import RawCommand from './elements/RawCommand';
 
 export default class Label{
-   constructor(copies = 1, width = 80, height = 52, gap = 2, leftMargin= 26, rowOffset= -15, startPos= 20){
+   constructor(copies = 1, width = 80, height = 52, gap = 2, leftMargin= 26, rowOffset= -15, startPos= 20, codepage = null){
 
       this.copies = 1;
       this.width = width;
@@ -24,6 +24,11 @@ export default class Label{
       this.leftMargin = leftMargin;
       this.rowOffset = rowOffset;
       this.startPos = startPos;
+      // Optional EZPL codepage (^XSET,CODEPAGE,n). Common values:
+      //   17 = Windows-1253 (Greek), 0 = Windows-1252 (Western), etc.
+      // When set, prefix includes `^XSET,CODEPAGE,<n>` so the printer
+      // interprets non-ASCII text bytes through that mapping.
+      this.codepage = codepage;
       // Hold list of babel elements
       this.labelEle = [];
 
@@ -37,6 +42,7 @@ export default class Label{
          leftMargin: ()=>{return `^R${this.leftMargin}\n`;},
          rowOffset: ()=>{return `~Q${this.rowOffset}\n`;},
          startPos: ()=>{return `^E${this.startPos}\n`;},
+         codepage: ()=>{return this.codepage != null ? `^XSET,CODEPAGE,${this.codepage}\n` : '';},
          startLabelNormal: ()=>{return '^L\n';},   // if mode = 0 || undefined
          startLabelInverse: ()=>{return '^LI\n';}, // if mode = 1
          startLabelMirror: ()=>{return '^LM\n';}  // if mode = 2
@@ -49,7 +55,8 @@ export default class Label{
          gap : x=>{this.gap = x;},
          leftMargin : x=>{this.leftMargin = x;},
          rowOffset : x=>{this.rowOffset = x;},
-         startPos : x=>{this.startPos = x;}
+         startPos : x=>{this.startPos = x;},
+         codepage : x=>{this.codepage = x;}
       };
    }
 
@@ -78,8 +85,11 @@ export default class Label{
       this.addLabelElement(new Text(text, xStart, yStart, size, rotation, font, inverse));
    }
 
-   addBarcode(type, x, y, narrow, width, height, data, rotation = 0 ){
-      this.addLabelElement(new Barcode(type, x, y, narrow, width, height, rotation, 0, data));
+   // `readable` controls the human-readable text the printer auto-renders below
+   // the bars (0 = none, 1 = below centred, etc., per EZPL spec). Defaults to 0
+   // for backward compatibility — callers asking for it pass true/1 explicitly.
+   addBarcode(type, x, y, narrow, width, height, data, rotation = 0, readable = 0){
+      this.addLabelElement(new Barcode(type, x, y, narrow, width, height, rotation, readable, data));
    }
 
    addQrCode(mode, type, x, y, errorCorrection, multiple, mask, rotation, data){
@@ -102,10 +112,12 @@ export default class Label{
 
    getPrintCommandPrefix(mode=0){
       var prefix =   this.cmd.copies() +
-                     (mode===0? this.cmd.startLabelNormal() : (mode===1? this.cmd.startLabelInverse() : this.cmd.startLabelMirror())) + this.cmd.labelDim() +
-                     this.cmd.leftMargin() +
-                     this.cmd.rowOffset() +
-                     this.cmd.startPos();
+          this.cmd.labelDim() +
+          this.cmd.leftMargin() +
+          this.cmd.rowOffset() +
+          this.cmd.startPos() +
+          this.cmd.codepage() +
+          (mode===0? this.cmd.startLabelNormal() : (mode===1? this.cmd.startLabelInverse() : this.cmd.startLabelMirror()));
       return prefix;
    }
 }
