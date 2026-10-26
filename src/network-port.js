@@ -4,6 +4,30 @@ import * as axios from 'axios';
 import EventEmitter from 'events';
 
 
+
+// Characters a form body may carry unencoded.
+const UNRESERVED = /[A-Za-z0-9\-_.~]/;
+
+const encodeSingleByte = (text) => Array.from(text, (ch) => {
+    if (UNRESERVED.test(ch)) { return ch; }
+    const code = ch.charCodeAt(0);
+    if (ch.length === 1 && code <= 0xFF) { return `%${code.toString(16).toUpperCase().padStart(2, '0')}`; }
+    return encodeURIComponent(ch);
+}).join('');
+
+/**
+ * Builds an x-www-form-urlencoded body with one byte per character.
+ * EZPL text is already in the printer's code page (e.g. Win-1253 Greek as U+00C1..U+00FE), so each
+ * character must reach the printer as that single byte; URLSearchParams would send it as two UTF-8 bytes.
+ * Characters above U+00FF keep UTF-8 encoding: no single byte can carry them.
+ * @param {Record<string, string|number>} fields - The form fields.
+ * @returns {string} The encoded body.
+ */
+export const toSingleByteFormBody = (fields) => Object.entries(fields)
+    .map(([key, value]) => `${encodeSingleByte(String(key))}=${encodeSingleByte(String(value))}`)
+    .join('&');
+
+
 export default class NetworkPort {
     constructor(){
 //      this.device = null;
@@ -137,11 +161,11 @@ export default class NetworkPort {
             }
             const properCommand = command.replaceAll('\n','\r\n');
 
-            const DataToSend = (new url.URLSearchParams({
+            const DataToSend = toSingleByteFormBody({
                 "printCmd":properCommand,
                 "outputMsg":"",
                 "hiddenButton": 1
-            })).toString();
+            });
 
             let response = await axios.request({
                 method: 'post',
@@ -175,11 +199,11 @@ export default class NetworkPort {
                 throw new Error('Port not open');
             }
             const commandToSend = command.replaceAll('\r\n','\n').replaceAll('\n','\r\n');
-            const DataToSend = (new url.URLSearchParams({
+            const DataToSend = toSingleByteFormBody({
                 "printCmd":commandToSend,
                 "outputMsg":"",
                 "hiddenButton": 1
-            })).toString();
+            });
 
             let parts = [];
             console.log("Doing command", commandToSend.length, commandToSend);
@@ -207,11 +231,11 @@ export default class NetworkPort {
             if (!this.isOpen()) {
                 throw new Error('Port not open');
             }
-            const DataToSend = (new url.URLSearchParams({
+            const DataToSend = toSingleByteFormBody({
                 "printCmd": command,
                  "outputMsg":"",
                 "hiddenButton": 1
-        })).toString();
+        });
             try {
                 let response = await axios.request({
                     method: 'post',
